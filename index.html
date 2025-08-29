@@ -5,44 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor y Validador de Alumnos</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { display: flex; flex-direction: column; align-items: center; gap: 30px; width: 100%; }
-        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; max-width: 500px; box-sizing: border-box; }
-        .card h1, .card h2 { text-align: center; margin-top: 0; }
-        .validator { border-top: 8px solid #ccc; }
-        .validator.success { border-top-color: #28a745; }
-        .validator.warning { border-top-color: #dc3545; }
-        .validator.not-found { border-top-color: #6c757d; }
-        .amount { font-size: 1.4em; font-weight: bold; color: #dc3545; margin-top: 15px; padding: 10px; border-radius: 8px; background-color: #fbebee; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f0f2f5; 
+            margin: 0; 
+            padding: 20px; 
+            box-sizing: border-box; 
+            display: flex;
+            justify-content: center;
+        }
+        .container { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 30px; 
+            width: 100%; 
+            max-width: 550px;
+        }
+        .card { 
+            background-color: white; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+            padding: 30px; 
+            width: 100%; 
+            box-sizing: border-box; 
+        }
+        .card h2 { 
+            text-align: center; 
+            margin-top: 0; 
+            color: #333;
+        }
+        .result-card {
+            display: none; /* Oculto por defecto */
+            border-top: 8px solid #ccc;
+            text-align: center;
+        }
+        .result-card.success { border-top-color: #28a745; }
+        .result-card.warning { border-top-color: #dc3545; }
+        .result-card.not-found { border-top-color: #6c757d; }
+        .amount { 
+            font-size: 1.4em; 
+            font-weight: bold; 
+            color: #dc3545; 
+            margin-top: 15px; 
+            padding: 10px; 
+            border-radius: 8px; 
+            background-color: #fbebee; 
+        }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 12px; 
+            font-size: 1.1em; 
+            border-radius: 6px; 
+            border: 1px solid #ccc; 
+            box-sizing: border-box; 
+        }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px; 
+        }
         button:hover { background-color: #0056b3; }
         button.secondary { background-color: #6c757d; }
         button.secondary:hover { background-color: #5a6268; }
-        #monto-group { display: none; }
+        #student-count { text-align: center; color: #666; margin-top: 15px; font-size: 0.9em; }
         #export-code { margin-top: 20px; }
         #export-code textarea { width: 100%; height: 150px; font-family: monospace; }
-        #student-count { text-align: center; color: #666; margin-top: 15px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div id="resultado" class="card validator">
-            <h1>Esperando QR...</h1>
-            <p>Escanee un código QR para ver el estado del alumno.</p>
+        <div class="card">
+            <h2>🔎 Validar Alumno por DNI</h2>
+            <div class="form-group">
+                <input type="tel" id="dni-input" placeholder="Ingrese DNI sin puntos" inputmode="numeric">
+            </div>
+            <button id="validate-btn">Verificar Estado</button>
+            <div id="validation-result" class="result-card"></div>
         </div>
 
         <div class="card">
             <h2>➕ Agregar Nuevo Alumno</h2>
             <form id="add-student-form">
                 <div class="form-group"><label for="nombre">Nombre y Apellido</label><input type="text" id="nombre" required></div>
-                <div class="form-group"><label for="dni">DNI (solo números)</label><input type="text" id="dni" pattern="\d+" required></div>
+                <div class="form-group"><label for="dni-add">DNI (solo números)</label><input type="text" id="dni-add" pattern="\d+" required></div>
                 <div class="form-group"><label for="estado">Estado de Pago</label><select id="estado" required><option value="Abonó">Abonó Totalmente</option><option value="Debe abonar">Debe Abonar</option></select></div>
-                <div class="form-group" id="monto-group"><label for="monto">Monto Adeudado (si no abona nada, poner "No registra pago")</label><input type="text" id="monto" value="0"></div>
-                <button type="submit">Guardar Alumno en este Navegador</button>
+                <div class="form-group" id="monto-group" style="display:none;"><label for="monto">Monto (ej: 15000 o "No registra pago")</label><input type="text" id="monto" value="0"></div>
+                <button type="submit">Guardar Alumno</button>
             </form>
             <div id="student-count"></div>
             <div id="export-code">
@@ -53,9 +112,8 @@
     </div>
 
     <script>
-        // LISTA INICIAL DE ALUMNOS (sólo se usa si no hay nada guardado en el navegador)
+        // LISTA INICIAL DE ALUMNOS (Base)
         const alumnosIniciales = [
-            // --- ABONO TOTAL ---
             { "dni": "96148769", "nombre": "Marta Diniz de Oliveira", "estado": "Abonó", "monto": 0 },
             { "dni": "29512322", "nombre": "Gustavo Javier Guzmán", "estado": "Abonó", "monto": 0 },
             { "dni": "20551091", "nombre": "Silvia Elizabeth Contreras", "estado": "Abonó", "monto": 0 },
@@ -95,10 +153,8 @@
             { "dni": "40860734", "nombre": "Marisol Leonela Rodriguez", "estado": "Abonó", "monto": 0 },
             { "dni": "36450714", "nombre": "Gabriela Lourdes Cruz", "estado": "Abonó", "monto": 0 },
             { "dni": "39159113", "nombre": "Alejander Daniel Flores", "estado": "Abonó", "monto": 0 },
-            // --- RESTA ABONAR ---
             { "dni": "36794643", "nombre": "Marcelo German Mierez", "estado": "Debe abonar", "monto": 15000 },
             { "dni": "94944238", "nombre": "Vianca Dalila Sanabria", "estado": "Debe abonar", "monto": 15000 },
-            // --- NO ABONO ---
             { "dni": "96130126", "nombre": "Israel Kanku", "estado": "Debe abonar", "monto": "No registra pago" },
             { "dni": "96156359", "nombre": "Daniel Zeballos Rodriguez", "estado": "Debe abonar", "monto": "No registra pago" },
             { "dni": "39875858", "nombre": "Trisi Maria Florencia", "estado": "Debe abonar", "monto": "No registra pago" },
@@ -116,102 +172,86 @@
 
         let alumnos = [];
 
-        // --- LÓGICA DE CARGA Y GUARDADO ---
-        function guardarAlumnos() {
-            localStorage.setItem('listaAlumnos', JSON.stringify(alumnos));
-        }
-
+        // --- LÓGICA DE CARGA Y GUARDADO EN NAVEGADOR ---
+        function guardarAlumnos() { localStorage.setItem('listaAlumnosCurso', JSON.stringify(alumnos)); }
         function cargarAlumnos() {
-            const alumnosGuardados = localStorage.getItem('listaAlumnos');
-            if (alumnosGuardados) {
-                alumnos = JSON.parse(alumnosGuardados);
-            } else {
-                alumnos = [...alumnosIniciales];
-            }
+            const alumnosGuardados = localStorage.getItem('listaAlumnosCurso');
+            alumnos = alumnosGuardados ? JSON.parse(alumnosGuardados) : [...alumnosIniciales];
             actualizarContador();
         }
-        
         function actualizarContador() {
-            const contador = document.getElementById('student-count');
-            contador.textContent = `Total de alumnos registrados: ${alumnos.length}`;
+            document.getElementById('student-count').textContent = `Total de alumnos registrados: ${alumnos.length}`;
         }
 
-        // --- LÓGICA DEL VALIDADOR ---
-        function validarAlumno() {
-            const resultadoDiv = document.getElementById('resultado');
-            const params = new URLSearchParams(window.location.search);
-            const dniBuscado = params.get('dni');
+        // --- LÓGICA DE VALIDACIÓN ---
+        function realizarValidacion(dniBuscado) {
+            const resultDiv = document.getElementById('validation-result');
+            if (!dniBuscado || dniBuscado.trim() === '') {
+                resultDiv.style.display = 'none';
+                return;
+            }
 
-            if (!dniBuscado) return;
+            const alumnoEncontrado = alumnos.find(a => a.dni === dniBuscado.trim());
+            resultDiv.style.display = 'block'; // Mostrar el cuadro de resultado
 
-            const alumnoEncontrado = alumnos.find(a => a.dni === dniBuscado);
             if (alumnoEncontrado) {
                 if (alumnoEncontrado.estado === 'Abonó') {
-                    resultadoDiv.className = 'card validator success';
-                    resultadoDiv.innerHTML = `<h1>¡Pago Confirmado!</h1><p>Bienvenido/a, ${alumnoEncontrado.nombre}.</p>`;
+                    resultDiv.className = 'result-card success';
+                    resultDiv.innerHTML = `<h2>¡Pago Confirmado!</h2><p>${alumnoEncontrado.nombre}</p>`;
                 } else {
-                    resultadoDiv.className = 'card validator warning';
+                    resultDiv.className = 'result-card warning';
                     const monto = typeof alumnoEncontrado.monto === 'number' ? `$${alumnoEncontrado.monto}` : alumnoEncontrado.monto;
-                    resultadoDiv.innerHTML = `<h1>Pago Pendiente</h1><p>Hola, ${alumnoEncontrado.nombre}.</p><p class="amount">Estado: ${monto}</p>`;
+                    resultDiv.innerHTML = `<h2>Pago Pendiente</h2><p>${alumnoEncontrado.nombre}</p><div class="amount">Estado: ${monto}</div>`;
                 }
             } else {
-                resultadoDiv.className = 'card validator not-found';
-                resultadoDiv.innerHTML = `<h1>DNI no encontrado</h1><p>El DNI ${dniBuscado} no figura en la lista.</p>`;
+                resultDiv.className = 'result-card not-found';
+                resultDiv.innerHTML = `<h2>DNI no encontrado</h2><p>El DNI ${dniBuscado} no figura en la lista.</p>`;
             }
         }
 
-        // --- LÓGICA DEL FORMULARIO ---
+        // --- CÓDIGO PRINCIPAL ---
         document.addEventListener('DOMContentLoaded', () => {
             cargarAlumnos();
-            validarAlumno();
 
+            const validateBtn = document.getElementById('validate-btn');
+            const dniInput = document.getElementById('dni-input');
+            validateBtn.addEventListener('click', () => realizarValidacion(dniInput.value));
+            dniInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') realizarValidacion(dniInput.value); });
+
+            // --- Lógica del formulario para agregar alumnos ---
             const estadoSelect = document.getElementById('estado');
             const montoGroup = document.getElementById('monto-group');
             const addStudentForm = document.getElementById('add-student-form');
-            const exportBtn = document.getElementById('export-btn');
-            const exportTextarea = document.getElementById('export-textarea');
-            
-            estadoSelect.addEventListener('change', () => {
-                montoGroup.style.display = estadoSelect.value === 'Debe abonar' ? 'block' : 'none';
-            });
+            estadoSelect.addEventListener('change', () => { montoGroup.style.display = estadoSelect.value === 'Debe abonar' ? 'block' : 'none'; });
 
             addStudentForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const nombre = document.getElementById('nombre').value.trim();
-                const dni = document.getElementById('dni').value.trim();
-                const estado = document.getElementById('estado').value;
-                let montoInput = document.getElementById('monto').value;
-                
+                const dni = document.getElementById('dni-add').value.trim();
                 if (alumnos.some(a => a.dni === dni)) {
                     alert('Error: Ya existe un alumno con ese DNI.');
                     return;
                 }
-
-                let montoFinal = 0;
-                if (estado === 'Debe abonar') {
-                    montoFinal = isNaN(parseInt(montoInput)) ? montoInput : parseInt(montoInput);
-                }
-
-                const nuevoAlumno = { dni, nombre, estado, monto: montoFinal };
-                alumnos.push(nuevoAlumno);
+                const nombre = document.getElementById('nombre').value.trim();
+                const estado = document.getElementById('estado').value;
+                let montoInput = document.getElementById('monto').value;
+                let montoFinal = (estado === 'Abonó') ? 0 : (isNaN(parseInt(montoInput)) ? montoInput : parseInt(montoInput));
+                
+                alumnos.push({ dni, nombre, estado, monto: montoFinal });
                 guardarAlumnos();
                 actualizarContador();
-                
                 alert(`¡Alumno "${nombre}" agregado con éxito!`);
                 addStudentForm.reset();
                 montoGroup.style.display = 'none';
             });
             
+            // --- Lógica de exportación ---
+            const exportBtn = document.getElementById('export-btn');
+            const exportTextarea = document.getElementById('export-textarea');
             exportBtn.addEventListener('click', () => {
-                let code = "const alumnosIniciales = [\n";
-                alumnos.forEach(a => {
-                    code += `    ${JSON.stringify(a)},\n`;
-                });
-                code += "];";
-                exportTextarea.value = code;
+                exportTextarea.value = `const alumnosIniciales = ${JSON.stringify(alumnos, null, 4)};`;
                 exportTextarea.style.display = 'block';
                 exportTextarea.select();
-                alert('Código de la lista completa generado. Cópialo del cuadro de texto para actualizar tu archivo .html');
+                alert('Código de la lista completa generado. Cópialo para actualizar tu archivo .html y tener un backup.');
             });
         });
     </script>
