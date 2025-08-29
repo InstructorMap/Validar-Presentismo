@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor y Validador de Alumnos</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
+        .container { display: flex; flex-direction: column; align-items: center; gap: 30px; width: 100%; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; max-width: 500px; box-sizing: border-box; }
+        .card h1, .card h2 { text-align: center; margin-top: 0; }
+        .validator { border-top: 8px solid #ccc; }
+        .validator.success { border-top-color: #28a745; }
+        .validator.warning { border-top-color: #dc3545; }
+        .validator.not-found { border-top-color: #6c757d; }
+        .amount { font-size: 1.4em; font-weight: bold; color: #dc3545; margin-top: 15px; padding: 10px; border-radius: 8px; background-color: #fbebee; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        button.secondary { background-color: #6c757d; }
+        button.secondary:hover { background-color: #5a6268; }
+        #monto-group { display: none; }
+        #export-code { margin-top: 20px; }
+        #export-code textarea { width: 100%; height: 150px; font-family: monospace; }
+        #student-count { text-align: center; color: #666; margin-top: 15px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="resultado" class="card validator">
+            <h1>Esperando QR...</h1>
+            <p>Escanee un código QR para ver el estado del alumno.</p>
+        </div>
+
+        <div class="card">
+            <h2>➕ Agregar Nuevo Alumno</h2>
+            <form id="add-student-form">
+                <div class="form-group"><label for="nombre">Nombre y Apellido</label><input type="text" id="nombre" required></div>
+                <div class="form-group"><label for="dni">DNI (solo números)</label><input type="text" id="dni" pattern="\d+" required></div>
+                <div class="form-group"><label for="estado">Estado de Pago</label><select id="estado" required><option value="Abonó">Abonó Totalmente</option><option value="Debe abonar">Debe Abonar</option></select></div>
+                <div class="form-group" id="monto-group"><label for="monto">Monto Adeudado (si no abona nada, poner "No registra pago")</label><input type="text" id="monto" value="0"></div>
+                <button type="submit">Guardar Alumno en este Navegador</button>
+            </form>
+            <div id="student-count"></div>
+            <div id="export-code">
+                <button id="export-btn" class="secondary">Exportar Lista para Backup</button>
+                <textarea id="export-textarea" style="display:none;" readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // LISTA INICIAL DE ALUMNOS (sólo se usa si no hay nada guardado en el navegador)
+        const alumnosIniciales = [
+            // --- ABONO TOTAL ---
+            { "dni": "96148769", "nombre": "Marta Diniz de Oliveira", "estado": "Abonó", "monto": 0 },
+            { "dni": "29512322", "nombre": "Gustavo Javier Guzmán", "estado": "Abonó", "monto": 0 },
+            { "dni": "20551091", "nombre": "Silvia Elizabeth Contreras", "estado": "Abonó", "monto": 0 },
+            { "dni": "26033305", "nombre": "Giménez Gloria", "estado": "Abonó", "monto": 0 },
+            { "dni": "17499879", "nombre": "Estela Inés Carballo", "estado": "Abonó", "monto": 0 },
+            { "dni": "36427231", "nombre": "Olga Haydee Filippa", "estado": "Abonó", "monto": 0 },
+            { "dni": "14635659", "nombre": "Fabián Ferreyra", "estado": "Abonó", "monto": 0 },
+            { "dni": "93187178", "nombre": "Jaqueline Loreley Parra Antunez", "estado": "Abonó", "monto": 0 },
+            { "dni": "95268711", "nombre": "Mirta Ayala", "estado": "Abonó", "monto": 0 },
+            { "dni": "32835350", "nombre": "Carolina Elizabeth Beatriz Orcesi", "estado": "Abonó", "monto": 0 },
+            { "dni": "96072490", "nombre": "Susana Carolina Gomez Mora", "estado": "Abonó", "monto": 0 },
+            { "dni": "27078944", "nombre": "Sabina Gabriela Cardozo", "estado": "Abonó", "monto": 0 },
+            { "dni": "30280273", "nombre": "Javier Norberto Maidana", "estado": "Abonó", "monto": 0 },
+            { "dni": "31757228", "nombre": "María Florencia Marinaro", "estado": "Abonó", "monto": 0 },
+            { "dni": "21330740", "nombre": "Claudia Noemí Acosta", "estado": "Abonó", "monto": 0 },
+            { "dni": "32580393", "nombre": "Sara Elisa Ruiz Díaz", "estado": "Abonó", "monto": 0 },
+            { "dni": "27295459", "nombre": "Elvira Dolores Mino Galvez", "estado": "Abonó", "monto": 0 },
+            { "dni": "38616235", "nombre": "Robles Katherine", "estado": "Abonó", "monto": 0 },
+            { "dni": "36824340", "nombre": "Olmedo Moya Evelin Soledad", "estado": "Abonó", "monto": 0 },
+            { "dni": "94971738", "nombre": "Luis Emiro Quintero Mora", "estado": "Abonó", "monto": 0 },
+            { "dni": "94315221", "nombre": "Gonzalo Lenis", "estado": "Abonó", "monto": 0 },
+            { "dni": "40304778", "nombre": "Samantha Daiana Salinas", "estado": "Abonó", "monto": 0 },
+            { "dni": "21863236", "nombre": "Karina Gladys Mazzella", "estado": "Abonó", "monto": 0 },
+            { "dni": "20585768", "nombre": "Delia Beatriz Rosa", "estado": "Abonó", "monto": 0 },
+            { "dni": "19073961", "nombre": "Laime Karina Paola", "estado": "Abonó", "monto": 0 },
+            { "dni": "94427917", "nombre": "Laura Mabel Sanabria Alvarez", "estado": "Abonó", "monto": 0 },
+            { "dni": "45177582", "nombre": "Candela Diaz", "estado": "Abonó", "monto": 0 },
+            { "dni": "26515114", "nombre": "Sandra Liliana Taibo", "estado": "Abonó", "monto": 0 },
+            { "dni": "28903677", "nombre": "Analia Pabla Badaracco", "estado": "Abonó", "monto": 0 },
+            { "dni": "19100128", "nombre": "Rosa Elvira Otaegui Campero", "estado": "Abonó", "monto": 0 },
+            { "dni": "96435404", "nombre": "Christian René Nogales Zamora", "estado": "Abonó", "monto": 0 },
+            { "dni": "20023652", "nombre": "Pablo Minteguia", "estado": "Abonó", "monto": 0 },
+            { "dni": "31674877", "nombre": "Martin Ignacio del Rio", "estado": "Abonó", "monto": 0 },
+            { "dni": "37998389", "nombre": "Daniel Hugo Prieto", "estado": "Abonó", "monto": 0 },
+            { "dni": "22990008", "nombre": "De Lorenzo Vanina", "estado": "Abonó", "monto": 0 },
+            { "dni": "39201085", "nombre": "Celia Griselda Salas", "estado": "Abonó", "monto": 0 },
+            { "dni": "40860734", "nombre": "Marisol Leonela Rodriguez", "estado": "Abonó", "monto": 0 },
+            { "dni": "36450714", "nombre": "Gabriela Lourdes Cruz", "estado": "Abonó", "monto": 0 },
+            { "dni": "39159113", "nombre": "Alejander Daniel Flores", "estado": "Abonó", "monto": 0 },
+            // --- RESTA ABONAR ---
+            { "dni": "36794643", "nombre": "Marcelo German Mierez", "estado": "Debe abonar", "monto": 15000 },
+            { "dni": "94944238", "nombre": "Vianca Dalila Sanabria", "estado": "Debe abonar", "monto": 15000 },
+            // --- NO ABONO ---
+            { "dni": "96130126", "nombre": "Israel Kanku", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "96156359", "nombre": "Daniel Zeballos Rodriguez", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "39875858", "nombre": "Trisi Maria Florencia", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "40896181", "nombre": "Ulises Tomás Gómez", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "26934717", "nombre": "Maria Martinez", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "94006892", "nombre": "Alicia Maidana", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "27827521", "nombre": "Herrera Lorena Silvana", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "96287907", "nombre": "Rosa Mayorga", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "95965099", "nombre": "Alessandra Leal Rosa", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "29004235", "nombre": "Garcia Daniela Lucia", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "29824760", "nombre": "Barrios Aguilar Marco Antonio", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "94510736", "nombre": "Tania Beatriz Ayala", "estado": "Debe abonar", "monto": "No registra pago" },
+            { "dni": "95156377", "nombre": "Adriana Adelina Rojas Becerra", "estado": "Debe abonar", "monto": "No registra pago" },
+        ];
+
+        let alumnos = [];
+
+        // --- LÓGICA DE CARGA Y GUARDADO ---
+        function guardarAlumnos() {
+            localStorage.setItem('listaAlumnos', JSON.stringify(alumnos));
+        }
+
+        function cargarAlumnos() {
+            const alumnosGuardados = localStorage.getItem('listaAlumnos');
+            if (alumnosGuardados) {
+                alumnos = JSON.parse(alumnosGuardados);
+            } else {
+                alumnos = [...alumnosIniciales];
+            }
+            actualizarContador();
+        }
+        
+        function actualizarContador() {
+            const contador = document.getElementById('student-count');
+            contador.textContent = `Total de alumnos registrados: ${alumnos.length}`;
+        }
+
+        // --- LÓGICA DEL VALIDADOR ---
+        function validarAlumno() {
+            const resultadoDiv = document.getElementById('resultado');
+            const params = new URLSearchParams(window.location.search);
+            const dniBuscado = params.get('dni');
+
+            if (!dniBuscado) return;
+
+            const alumnoEncontrado = alumnos.find(a => a.dni === dniBuscado);
+            if (alumnoEncontrado) {
+                if (alumnoEncontrado.estado === 'Abonó') {
+                    resultadoDiv.className = 'card validator success';
+                    resultadoDiv.innerHTML = `<h1>¡Pago Confirmado!</h1><p>Bienvenido/a, ${alumnoEncontrado.nombre}.</p>`;
+                } else {
+                    resultadoDiv.className = 'card validator warning';
+                    const monto = typeof alumnoEncontrado.monto === 'number' ? `$${alumnoEncontrado.monto}` : alumnoEncontrado.monto;
+                    resultadoDiv.innerHTML = `<h1>Pago Pendiente</h1><p>Hola, ${alumnoEncontrado.nombre}.</p><p class="amount">Estado: ${monto}</p>`;
+                }
+            } else {
+                resultadoDiv.className = 'card validator not-found';
+                resultadoDiv.innerHTML = `<h1>DNI no encontrado</h1><p>El DNI ${dniBuscado} no figura en la lista.</p>`;
+            }
+        }
+
+        // --- LÓGICA DEL FORMULARIO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarAlumnos();
+            validarAlumno();
+
+            const estadoSelect = document.getElementById('estado');
+            const montoGroup = document.getElementById('monto-group');
+            const addStudentForm = document.getElementById('add-student-form');
+            const exportBtn = document.getElementById('export-btn');
+            const exportTextarea = document.getElementById('export-textarea');
+            
+            estadoSelect.addEventListener('change', () => {
+                montoGroup.style.display = estadoSelect.value === 'Debe abonar' ? 'block' : 'none';
+            });
+
+            addStudentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const nombre = document.getElementById('nombre').value.trim();
+                const dni = document.getElementById('dni').value.trim();
+                const estado = document.getElementById('estado').value;
+                let montoInput = document.getElementById('monto').value;
+                
+                if (alumnos.some(a => a.dni === dni)) {
+                    alert('Error: Ya existe un alumno con ese DNI.');
+                    return;
+                }
+
+                let montoFinal = 0;
+                if (estado === 'Debe abonar') {
+                    montoFinal = isNaN(parseInt(montoInput)) ? montoInput : parseInt(montoInput);
+                }
+
+                const nuevoAlumno = { dni, nombre, estado, monto: montoFinal };
+                alumnos.push(nuevoAlumno);
+                guardarAlumnos();
+                actualizarContador();
+                
+                alert(`¡Alumno "${nombre}" agregado con éxito!`);
+                addStudentForm.reset();
+                montoGroup.style.display = 'none';
+            });
+            
+            exportBtn.addEventListener('click', () => {
+                let code = "const alumnosIniciales = [\n";
+                alumnos.forEach(a => {
+                    code += `    ${JSON.stringify(a)},\n`;
+                });
+                code += "];";
+                exportTextarea.value = code;
+                exportTextarea.style.display = 'block';
+                exportTextarea.select();
+                alert('Código de la lista completa generado. Cópialo del cuadro de texto para actualizar tu archivo .html');
+            });
+        });
+    </script>
+
+</body>
+</html>
