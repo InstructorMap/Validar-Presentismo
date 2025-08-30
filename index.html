@@ -5,84 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor y Validador de Alumnos</title>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f0f2f5; 
-            margin: 0; 
-            padding: 20px; 
-            box-sizing: border-box; 
-            display: flex;
-            justify-content: center;
-        }
-        .container { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 30px; 
-            width: 100%; 
-            max-width: 550px;
-        }
-        .card { 
-            background-color: white; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
-            padding: 30px; 
-            width: 100%; 
-            box-sizing: border-box; 
-        }
-        .card h2 { 
-            text-align: center; 
-            margin-top: 0; 
-            color: #333;
-        }
-        .result-card {
-            display: none; /* Oculto por defecto */
-            border-top: 8px solid #ccc;
-            text-align: center;
-            padding-top: 20px;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; display: flex; justify-content: center; }
+        .container { display: flex; flex-direction: column; align-items: center; gap: 30px; width: 100%; max-width: 550px; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; box-sizing: border-box; position: relative; }
+        .card h2 { text-align: center; margin-top: 0; color: #333; }
+        .result-card { display: none; border-top: 8px solid #ccc; text-align: center; padding-top: 20px; }
         .result-card.success { border-top-color: #28a745; }
         .result-card.warning { border-top-color: #dc3545; }
         .result-card.not-found { border-top-color: #6c757d; }
-        .amount { 
-            font-size: 1.4em; 
-            font-weight: bold; 
-            color: #dc3545; 
-            margin-top: 15px; 
-            padding: 10px; 
-            border-radius: 8px; 
-            background-color: #fbebee; 
-        }
+        .amount { font-size: 1.4em; font-weight: bold; color: #dc3545; margin-top: 15px; padding: 10px; border-radius: 8px; background-color: #fbebee; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
-        .form-group input, .form-group select { 
-            width: 100%; 
-            padding: 12px; 
-            font-size: 1.1em; 
-            border-radius: 6px; 
-            border: 1px solid #ccc; 
-            box-sizing: border-box; 
-        }
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            background-color: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            font-size: 1.1em; 
-            font-weight: bold; 
-            cursor: pointer; 
-            margin-top: 10px; 
-        }
+        .form-group input, .form-group select { width: 100%; padding: 12px; font-size: 1.1em; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
         button:hover { background-color: #0056b3; }
-        button.secondary { background-color: #28a745; margin-top: 20px; } /* Botón de Formspree */
+        button.secondary { background-color: #28a745; margin-top: 20px; }
         button.secondary:hover { background-color: #218838; }
         #student-count { text-align: center; color: #666; margin-top: 15px; font-size: 0.9em; }
+        /* Estilo para los mensajes de confirmación */
+        .feedback-message { padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center; font-weight: bold; display: none; }
+        .feedback-message.success { background-color: #d4edda; color: #155724; }
+        .feedback-message.error { background-color: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <div class="card">
             <h2>🔎 Validar Alumno por DNI</h2>
@@ -102,13 +48,11 @@
                 <div class="form-group" id="monto-group" style="display:none;"><label for="monto">Monto (ej: 15000 o "No registra pago")</label><input type="text" id="monto" value="0"></div>
                 <button type="submit">Guardar Alumno</button>
             </form>
+            <div id="add-feedback" class="feedback-message"></div>
             <div id="student-count"></div>
-            
             <form id="formspree-form" action="https://formspree.io/f/xjkeygyy" method="POST">
                 <input type="hidden" name="lista_de_alumnos" id="formspree-data">
-                
                 <input type="hidden" name="_subject" value="Backup: Lista de Alumnos del Curso">
-                
                 <button type="submit" class="secondary">📧 Enviar Backup por Email</button>
             </form>
         </div>
@@ -117,18 +61,125 @@
     <script>
         // LISTA INICIAL DE ALUMNOS (Base)
         const alumnosIniciales = [
-            // ... (Tu lista completa está aquí, se omite por brevedad para no repetir)
+            // Tu lista completa va aquí. La he omitido para que la respuesta sea más corta.
+            { "dni": "96148769", "nombre": "Marta Diniz de Oliveira", "estado": "Abonó", "monto": 0 },
+            { "dni": "29512322", "nombre": "Gustavo Javier Guzmán", "estado": "Abonó", "monto": 0 },
+            // ... Asegúrate de que tu lista completa esté aquí ...
             { "dni": "95156377", "nombre": "Adriana Adelina Rojas Becerra", "estado": "Debe abonar", "monto": "No registra pago" },
         ];
 
         let alumnos = [];
 
-        // --- LÓGICA DE CARGA Y GUARDADO EN NAVEGADOR ---
-        function guardarAlumnos() { localStorage.setItem('listaAlumnosCurso', JSON.stringify(alumnos)); }
+        function showFeedback(elementId, message, isError = false) {
+            const feedbackElement = document.getElementById(elementId);
+            feedbackElement.textContent = message;
+            feedbackElement.className = `feedback-message ${isError ? 'error' : 'success'}`;
+            feedbackElement.style.display = 'block';
+            setTimeout(() => { feedbackElement.style.display = 'none'; }, 3000);
+        }
+
+        function guardarAlumnos() {
+            try {
+                localStorage.setItem('listaAlumnosCurso', JSON.stringify(alumnos));
+                console.log('✅ Alumnos guardados en localStorage. Total:', alumnos.length);
+            } catch (e) {
+                console.error('❌ Error al guardar en localStorage:', e);
+                alert("Error: No se pudo guardar la lista de alumnos. Puede que estés en modo incógnito o el navegador sea muy antiguo.");
+            }
+        }
+
         function cargarAlumnos() {
-            const alumnosGuardados = localStorage.getItem('listaAlumnosCurso');
-            alumnos = alumnosGuardados ? JSON.parse(alumnosGuardados) : [...alumnosIniciales];
+            try {
+                const alumnosGuardados = localStorage.getItem('listaAlumnosCurso');
+                if (alumnosGuardados) {
+                    alumnos = JSON.parse(alumnosGuardados);
+                    console.log('✅ Alumnos cargados desde localStorage. Total:', alumnos.length);
+                } else {
+                    alumnos = [...alumnosIniciales];
+                    console.log('ℹ️ No se encontró lista guardada. Cargando lista inicial. Total:', alumnos.length);
+                }
+            } catch (e) {
+                console.error('❌ Error al cargar de localStorage. Usando lista inicial.', e);
+                alumnos = [...alumnosIniciales];
+            }
             actualizarContador();
         }
+
         function actualizarContador() {
-            document.getElementById('student-count').textContent = `Total
+            document.getElementById('student-count').textContent = `Total de alumnos registrados: ${alumnos.length}`;
+        }
+
+        function realizarValidacion(dniBuscado) {
+            const resultDiv = document.getElementById('validation-result');
+            const dniInput = document.getElementById('dni-input');
+            if (!dniBuscado || dniBuscado.trim() === '') {
+                resultDiv.style.display = 'none';
+                return;
+            }
+
+            const dniLimpio = dniBuscado.trim();
+            const alumnoEncontrado = alumnos.find(a => a.dni === dniLimpio);
+            resultDiv.style.display = 'block';
+            console.log(`🔎 Buscando DNI: ${dniLimpio}. Encontrado:`, alumnoEncontrado || 'No');
+
+            if (alumnoEncontrado) {
+                if (alumnoEncontrado.estado === 'Abonó') {
+                    resultDiv.className = 'result-card success';
+                    resultDiv.innerHTML = `<h2>¡Pago Confirmado!</h2><p>${alumnoEncontrado.nombre}</p>`;
+                } else {
+                    resultDiv.className = 'result-card warning';
+                    const monto = typeof alumnoEncontrado.monto === 'number' ? `$${alumnoEncontrado.monto}` : alumnoEncontrado.monto;
+                    resultDiv.innerHTML = `<h2>Pago Pendiente</h2><p>${alumnoEncontrado.nombre}</p><div class="amount">Estado: ${monto}</div>`;
+                }
+            } else {
+                resultDiv.className = 'result-card not-found';
+                resultDiv.innerHTML = `<h2>DNI no encontrado</h2><p>El DNI ${dniLimpio} no figura en la lista.</p>`;
+            }
+            dniInput.value = ''; // Limpiar el campo después de la búsqueda
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarAlumnos();
+            const validateBtn = document.getElementById('validate-btn');
+            const dniInput = document.getElementById('dni-input');
+            validateBtn.addEventListener('click', () => realizarValidacion(dniInput.value));
+            dniInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') realizarValidacion(dniInput.value); });
+            
+            const estadoSelect = document.getElementById('estado');
+            const montoGroup = document.getElementById('monto-group');
+            const addStudentForm = document.getElementById('add-student-form');
+            estadoSelect.addEventListener('change', () => { montoGroup.style.display = estadoSelect.value === 'Debe abonar' ? 'block' : 'none'; });
+
+            addStudentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const dni = document.getElementById('dni-add').value.trim();
+                if (alumnos.some(a => a.dni === dni)) {
+                    showFeedback('add-feedback', 'Error: Ya existe un alumno con ese DNI.', true);
+                    return;
+                }
+                const nombre = document.getElementById('nombre').value.trim();
+                const estado = document.getElementById('estado').value;
+                let montoInput = document.getElementById('monto').value;
+                let montoFinal = (estado === 'Abonó') ? 0 : (isNaN(parseInt(montoInput)) ? montoInput : parseInt(montoInput));
+                
+                alumnos.push({ dni, nombre, estado, monto: montoFinal });
+                guardarAlumnos();
+                actualizarContador();
+                showFeedback('add-feedback', `¡Alumno "${nombre}" agregado con éxito!`);
+                addStudentForm.reset();
+                montoGroup.style.display = 'none';
+            });
+            
+            const formspreeForm = document.getElementById('formspree-form');
+            formspreeForm.addEventListener('submit', () => {
+                let listaFormateada = "Lista de Alumnos - Backup\n================================\n\n";
+                alumnos.forEach(alumno => {
+                    listaFormateada += `Nombre: ${alumno.nombre}\nDNI: ${alumno.dni}\nEstado: ${alumno.estado}\nMonto: ${alumno.monto}\n--------------------------------\n`;
+                });
+                document.getElementById('formspree-data').value = listaFormateada;
+                console.log('📧 Enviando backup a Formspree...');
+            });
+        });
+    </script>
+</body>
+</html>
