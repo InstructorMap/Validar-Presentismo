@@ -10,6 +10,11 @@
         .card h1, .card h2 { text-align: center; margin-top: 0; color: #333; }
         .payment-instructions { text-align: center; background-color: #e9ecef; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
         .payment-instructions .alias { font-size: 1.5em; font-weight: bold; color: #007bff; margin: 10px 0; user-select: all; }
+        /* Nuevos estilos para la lista de precios */
+        .price-list { list-style: none; padding: 0; margin: 15px 0; }
+        .price-list li { display: flex; justify-content: space-between; font-size: 1.2em; padding: 5px 0; }
+        .price-list li span { font-weight: bold; }
+
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
         .form-group input { width: 100%; padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
@@ -23,8 +28,13 @@
         <p style="text-align: center; color: #666;">Tu registro se completó con éxito. El último paso es realizar el pago y enviarnos el comprobante.</p>
 
         <div class="payment-instructions">
-            <h3>Instrucciones de Pago</h3>
-            <p>Por favor, transfiere el monto indicado por el instructor a la siguiente cuenta:</p>
+            <h3>Valores del Taller</h3>
+            
+            <ul class="price-list">
+                <li>Precio Alumnos: <span>$15.000 ARS</span></li>
+                <li>Precio Público General: <span>$25.000 ARS</span></li>
+            </ul>
+            <p>Por favor, transfiere el monto que te corresponda a la siguiente cuenta:</p>
             <p>Alias de Mercado Pago / CVU:</p>
             <div class="alias">marcelopatri</div>
             <p>Titular: Marcelo Alejandro Patri</p>
@@ -42,10 +52,12 @@
                 <label for="dni">Tu DNI (el mismo con el que te inscribiste)</label>
                 <input type="text" id="dni" name="DNI" pattern="\d+" required>
             </div>
+
             <div class="form-group">
-                <label for="monto">Monto Abonado</label>
-                <input type="number" id="monto" name="MontoAbonado" placeholder="Ej: 5000" step="0.01" required>
+                <label for="monto">Monto Exacto Abonado</label>
+                <input type="number" id="monto" name="MontoAbonado" placeholder="Ej: 15000 o 25000" step="0.01" required>
             </div>
+
             <div class="form-group">
                 <label for="comprobante">Adjuntar Comprobante (JPG, PNG, PDF)</label>
                 <input type="file" id="comprobante" name="Comprobante" accept=".jpg,.jpeg,.png,.pdf" required>
