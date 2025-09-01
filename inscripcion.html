@@ -18,8 +18,10 @@
 <body>
     <div class="card">
         <h1>Formulario de Inscripción</h1>
-        <p style="text-align: center; color: #666;">Completa tus datos para registrarte en el curso. Una vez enviado, el administrador procesará tu pago.</p>
+        <p style="text-align: center; color: #666;">Completa tus datos para registrarte en el curso. A continuación, verás las instrucciones para el pago.</p>
         <form action="https://formspree.io/f/xjkeygyy" method="POST">
+            <input type="hidden" name="_next" value="https://instructormap.github.io/Validar-Presentismo/pago.html">
+
             <div class="form-group">
                 <label for="nombre">Nombre y Apellido Completo</label>
                 <input type="text" id="nombre" name="NombreApellido" required>
@@ -28,15 +30,15 @@
                 <label for="dni">DNI (sin puntos ni espacios)</label>
                 <input type="text" id="dni" name="DNI" pattern="\d+" required>
             </div>
-            
             <div class="form-group">
                 <label for="taller">Taller Elegido</label>
                 <input type="text" id="taller" name="TallerElegido" placeholder="Escribe el nombre del taller" required>
             </div>
+            
             <input type="hidden" name="Estado" value="Debe abonar">
             <input type="hidden" name="Monto" value="A definir">
             
-            <button type="submit">Finalizar Inscripción</button>
+            <button type="submit">Siguiente: Realizar Pago</button>
         </form>
     </div>
 </body>
