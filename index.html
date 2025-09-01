@@ -3,14 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administrador (Modo Diagnóstico)</title>
+    <title>Panel de Administrador</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; max-width: 550px; box-sizing: border-box; }
         .card h2 { text-align: center; margin-top: 0; }
         .container { display: none; flex-direction: column; align-items: center; gap: 30px; width: 100%; }
+        
+        /* Estilos para el formulario de login */
         #login-container { max-width: 400px; }
         #login-error { color: #dc3545; text-align: center; margin-top: 15px; font-weight: bold; }
+
+        /* Estilos del panel de admin */
         .loader { text-align: center; padding: 20px; display: none; }
         .result-card { display: none; border-top: 8px solid; text-align: center; padding-top: 20px; margin-top: 20px; }
         .result-card.success { border-top-color: #28a745; }
@@ -40,13 +44,31 @@
             <div id="login-error"></div>
         </form>
     </div>
+
     <div id="app-container" class="container">
+        <div class="card">
+            <h2>🔎 Gestor de Pagos</h2>
+            <div class="form-group">
+                <input type="tel" id="dni-input" placeholder="Ingrese DNI del alumno" inputmode="numeric">
+            </div>
+            <button id="validate-btn">Verificar Alumno</button>
+            <a href="https://docs.google.com/spreadsheets/d/1uf-Z_0r_plAPu9NHKGARtcqewsqaHLXJGkGMuG5bB9E/edit" target="_blank" style="text-decoration: none;">
+                <button type="button" class="secondary-btn">🗂️ Abrir Base de Datos (Google Sheet)</button>
+            </a>
+            <div class="loader" id="validator-loader">Buscando en la base de datos...</div>
+            <div id="validation-result" class="result-card"></div>
         </div>
+    </div>
 
     <script>
+        // =======================================================================
+        // URL de tu Aplicación Web de Google Apps Script
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwd8ma4RzPyUOfUvlYmFGiLxpqnrCJIYP1jg-NgsHYpu5bmvd1uQNFXFmyEqYil68efg/exec";
-        
-        // --- LÓGICA DE INICIO DE SESIÓN CON DIAGNÓSTICO ---
+        // =======================================================================
+
+        let currentStudent = null;
+
+        // --- LÓGICA DE INICIO DE SESIÓN ---
         document.getElementById('login-form').addEventListener('submit', function(event) {
             event.preventDefault();
 
@@ -57,27 +79,15 @@
             const enteredPass = document.getElementById('pass-input').value;
             const loginError = document.getElementById('login-error');
 
-            // ▼▼▼ ALERTA DE DIAGNÓSTICO ▼▼▼
-            alert(
-                `-- DATOS INGRESADOS --\n` +
-                `Usuario: '${enteredUser}'\n` +
-                `Contraseña: '${enteredPass}'\n\n` +
-                `-- DATOS REQUERIDOS --\n` +
-                `Usuario: '${USER}'\n` +
-                `Contraseña: '${PASS}'`
-            );
-            // ▲▲▲ FIN DE LA ALERTA ▲▲▲
-
             if (enteredUser === USER && enteredPass === PASS) {
+                // Si los datos son correctos, oculta el login y muestra el panel
                 document.getElementById('login-container').style.display = 'none';
                 document.getElementById('app-container').style.display = 'flex';
-                // El resto del código de la app (que he omitido aquí) debería estar dentro de la función initializeApp()
-                // Pero para esta prueba, lo importante es ver si la alerta muestra los datos correctos.
-                document.getElementById('app-container').innerHTML = '<h1>¡Acceso Concedido!</h1><p>El panel de administración se cargaría aquí.</p>';
+                initializeApp();
             } else {
+                // Si son incorrectos, muestra un mensaje de error
                 loginError.textContent = 'Usuario o contraseña incorrectos.';
             }
         });
-    </script>
-</body>
-</html>
+
+        // ---
