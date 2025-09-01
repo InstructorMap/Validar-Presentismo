@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <title>Realizar Pago y Enviar Comprobante</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 40px; width: 100%; max-width: 600px; }
+        .card h1, .card h2 { text-align: center; margin-top: 0; color: #333; }
+        .payment-instructions { text-align: center; background-color: #e9ecef; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .payment-instructions .alias { font-size: 1.5em; font-weight: bold; color: #007bff; margin: 10px 0; user-select: all; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .form-group input { width: 100%; padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 1.1em; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .payment-link-btn { background-color: #17a2b8; margin-top: 15px; }
+        .payment-link-btn:hover { background-color: #138496; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>¡Inscripción Recibida!</h1>
+        <p style="text-align: center; color: #666;">Tu registro se completó con éxito. El último paso es realizar el pago y enviarnos el comprobante.</p>
+
+        <div class="payment-instructions">
+            <h3>Instrucciones de Pago</h3>
+            <p>Puedes pagar directamente con el siguiente link o transferir al alias.</p>
+            
+            <a href="https://link.mercadopago.com.ar/TULINK" target="_blank" style="text-decoration: none;">
+                <button type="button" class="payment-link-btn">💳 Pagar con Link Seguro</button>
+            </a>
+
+            <p style="margin-top: 25px;">O transferir a la siguiente cuenta:</p>
+            <p>Alias de Mercado Pago / CVU:</p>
+            
+            <div class="alias">marcelopatri</div>
+            <p>Titular: Marcelo Alejandro Patri</p>
+            </div>
+
+        <h2>Enviar Comprobante de Pago</h2>
+        <form action="https://formspree.io/f/xjkeygyy" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_subject" value="Nuevo Comprobante de Pago Recibido">
+            
+            <div class="form-group">
+                <label for="nombre">Tu Nombre y Apellido</label>
+                <input type="text" id="nombre" name="NombreApellido" required>
+            </div>
+            <div class="form-group">
+                <label for="dni">Tu DNI (el mismo con el que te inscribiste)</label>
+                <input type="text" id="dni" name="DNI" pattern="\d+" required>
+            </div>
+            <div class="form-group">
+                <label for="comprobante">Adjuntar Comprobante (JPG, PNG, PDF)</label>
+                <input type="file" id="comprobante" name="Comprobante" accept=".jpg,.jpeg,.png,.pdf" required>
+            </div>
+            
+            <button type="submit">Enviar Comprobante</button>
+        </form>
+    </div>
+</body>
+</html>
