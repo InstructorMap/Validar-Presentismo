@@ -5,10 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administrador</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { display: none; flex-direction: column; align-items: center; gap: 30px; width: 100%; max-width: 550px; margin: auto; }
-        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; max-width: 550px; box-sizing: border-box; }
         .card h2 { text-align: center; margin-top: 0; }
+        .container { display: none; flex-direction: column; align-items: center; gap: 30px; width: 100%; }
+        
+        /* Estilos para el formulario de login */
+        #login-container { max-width: 400px; }
+        #login-error { color: #dc3545; text-align: center; margin-top: 15px; font-weight: bold; }
+
+        /* Estilos del panel de admin */
         .loader { text-align: center; padding: 20px; display: none; }
         .result-card { display: none; border-top: 8px solid; text-align: center; padding-top: 20px; margin-top: 20px; }
         .result-card.success { border-top-color: #28a745; }
@@ -25,6 +31,20 @@
     </style>
 </head>
 <body>
+    <div id="login-container" class="card">
+        <h2>Acceso de Administrador</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <input type="text" id="user-input" placeholder="Usuario" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="pass-input" placeholder="Contraseña" required>
+            </div>
+            <button type="submit">Ingresar</button>
+            <div id="login-error"></div>
+        </form>
+    </div>
+
     <div id="app-container" class="container">
         <div class="card">
             <h2>🔎 Gestor de Pagos</h2>
@@ -32,11 +52,9 @@
                 <input type="tel" id="dni-input" placeholder="Ingrese DNI del alumno" inputmode="numeric">
             </div>
             <button id="validate-btn">Verificar Alumno</button>
-
             <a href="https://docs.google.com/spreadsheets/d/1uf-Z_0r_plAPu9NHKGARtcqewsqaHLXJGkGMuG5bB9E/edit" target="_blank" style="text-decoration: none;">
                 <button type="button" class="secondary-btn">🗂️ Abrir Base de Datos (Google Sheet)</button>
             </a>
-            
             <div class="loader" id="validator-loader">Buscando en la base de datos...</div>
             <div id="validation-result" class="result-card"></div>
         </div>
@@ -50,6 +68,37 @@
 
         let currentStudent = null;
 
+        // --- LÓGICA DE INICIO DE SESIÓN ---
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Evita que la página se recargue
+
+            const USER = "Admin Colbert"; 
+            const PASS = "Mariana99.+";
+            
+            const enteredUser = document.getElementById('user-input').value;
+            const enteredPass = document.getElementById('pass-input').value;
+            const loginError = document.getElementById('login-error');
+
+            if (enteredUser === USER && enteredPass === PASS) {
+                // Si los datos son correctos, oculta el login y muestra el panel
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                initializeApp();
+            } else {
+                // Si son incorrectos, muestra un mensaje de error
+                loginError.textContent = 'Usuario o contraseña incorrectos.';
+            }
+        });
+
+        // --- LÓGICA DE LA APLICACIÓN (se ejecuta después del login exitoso) ---
+        function initializeApp() {
+            const validateBtn = document.getElementById('validate-btn');
+            const dniInput = document.getElementById('dni-input');
+
+            validateBtn.addEventListener('click', () => realizarValidacion(dniInput.value.trim()));
+            dniInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') realizarValidacion(dniInput.value.trim()); });
+        }
+        
         async function updateStatus(newState, newAmount) {
             if (!currentStudent) return;
             const validatorLoader = document.getElementById('validator-loader');
@@ -60,12 +109,7 @@
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        action: 'updateStatus',
-                        row: currentStudent.row,
-                        newState: newState,
-                        newAmount: newAmount
-                    })
+                    body: JSON.stringify({ action: 'updateStatus', row: currentStudent.row, newState: newState, newAmount: newAmount })
                 });
                 const result = await response.json();
                 if(result.success) {
@@ -83,52 +127,4 @@
         function displayStudentData(student) {
             currentStudent = student;
             const validationResultDiv = document.getElementById('validation-result');
-            let content = `<h3>${student.nombre}</h3>`;
-            
-            if(student.estado === 'Abonó') {
-                validationResultDiv.className = 'result-card success';
-                content += `<p>Estado: <strong>Pagado</strong></p>`;
-            } else {
-                validationResultDiv.className = 'result-card warning';
-                content += `<p>Estado: <strong style="color: #dc3545;">Debe Abonar</strong></p>`;
-                content += `<div class="amount">Monto: ${student.monto}</div>`;
-                content += `<br><button class="success-btn" onclick="updateStatus('Abonó', 0)">✔️ Marcar como Pagado</button>`;
-            }
-            validationResultDiv.innerHTML = content;
-        }
-
-        async function realizarValidacion(dni) {
-            const validatorLoader = document.getElementById('validator-loader');
-            const validationResultDiv = document.getElementById('validation-result');
-            const validateBtn = document.getElementById('validate-btn');
-            const dniInput = document.getElementById('dni-input');
-
-            if (!dni) return;
-            validatorLoader.style.display = 'block';
-            validationResultDiv.style.display = 'none';
-            validateBtn.disabled = true;
-
-            try {
-                const response = await fetch(`${SCRIPT_URL}?action=getStudent&dni=${dni}`);
-                const result = await response.json();
-
-                if (result.success) {
-                    displayStudentData(result.data);
-                } else {
-                    currentStudent = null;
-                    validationResultDiv.className = 'result-card not-found';
-                    validationResultDiv.innerHTML = `<h3>DNI no encontrado</h3><p>${result.message}</p>`;
-                }
-            } catch (error) {
-                currentStudent = null;
-                validationResultDiv.className = 'result-card not-found';
-                validationResultDiv.innerHTML = `<h3>Error de Conexión</h3><p>No se pudo conectar con la base de datos.</p>`;
-            } finally {
-                validatorLoader.style.display = 'none';
-                validationResultDiv.style.display = 'block';
-                validateBtn.disabled = false;
-                dniInput.value = '';
-            }
-        }
-        
-        //
+            let
