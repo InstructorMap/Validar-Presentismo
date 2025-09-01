@@ -20,7 +20,6 @@
         button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
         button:disabled { background-color: #aaa; cursor: not-allowed; }
         button.success-btn { background-color: #28a745; }
-        /* Estilo para el nuevo botón de acceso directo */
         button.secondary-btn { background-color: #6c757d; }
         button.secondary-btn:hover { background-color: #5a6268; }
     </style>
@@ -37,6 +36,7 @@
             <a href="https://docs.google.com/spreadsheets/d/1uf-Z_0r_plAPu9NHKGARtcqewsqaHLXJGkGMuG5bB9E/edit" target="_blank" style="text-decoration: none;">
                 <button type="button" class="secondary-btn">🗂️ Abrir Base de Datos (Google Sheet)</button>
             </a>
+            
             <div class="loader" id="validator-loader">Buscando en la base de datos...</div>
             <div id="validation-result" class="result-card"></div>
         </div>
@@ -51,44 +51,84 @@
         let currentStudent = null;
 
         async function updateStatus(newState, newAmount) {
-            // ... (código sin cambios)
+            if (!currentStudent) return;
+            const validatorLoader = document.getElementById('validator-loader');
+            const validationResultDiv = document.getElementById('validation-result');
+            validatorLoader.style.display = 'block';
+            validationResultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateStatus',
+                        row: currentStudent.row,
+                        newState: newState,
+                        newAmount: newAmount
+                    })
+                });
+                const result = await response.json();
+                if(result.success) {
+                    realizarValidacion(currentStudent.dni);
+                } else {
+                    alert('Error al actualizar el estado.');
+                    validatorLoader.style.display = 'none';
+                }
+            } catch(error) {
+                alert('Error de conexión al actualizar.');
+                validatorLoader.style.display = 'none';
+            }
         }
         
         function displayStudentData(student) {
-            // ... (código sin cambios)
+            currentStudent = student;
+            const validationResultDiv = document.getElementById('validation-result');
+            let content = `<h3>${student.nombre}</h3>`;
+            
+            if(student.estado === 'Abonó') {
+                validationResultDiv.className = 'result-card success';
+                content += `<p>Estado: <strong>Pagado</strong></p>`;
+            } else {
+                validationResultDiv.className = 'result-card warning';
+                content += `<p>Estado: <strong style="color: #dc3545;">Debe Abonar</strong></p>`;
+                content += `<div class="amount">Monto: ${student.monto}</div>`;
+                content += `<br><button class="success-btn" onclick="updateStatus('Abonó', 0)">✔️ Marcar como Pagado</button>`;
+            }
+            validationResultDiv.innerHTML = content;
         }
 
         async function realizarValidacion(dni) {
-            // ... (código sin cambios)
-        }
-        
-        window.onload = function() {
-            const USER = "Admin Colbert"; 
-            const PASS = "Mariana99.+";
-
-            const enteredUser = prompt("👤 Ingrese su usuario:");
-            const enteredPass = prompt("🔑 Ingrese su contraseña:");
-
-            if (enteredUser === USER && enteredPass === PASS) {
-                document.getElementById('app-container').style.display = 'flex';
-                initializeApp();
-            } else {
-                document.body.innerHTML = '<div style="text-align:center; padding-top: 50px;"><h1>⛔ Acceso Denegado</h1><p>El usuario o la contraseña son incorrectos.</p></div>';
-            }
-        };
-
-        function initializeApp() {
+            const validatorLoader = document.getElementById('validator-loader');
+            const validationResultDiv = document.getElementById('validation-result');
             const validateBtn = document.getElementById('validate-btn');
             const dniInput = document.getElementById('dni-input');
 
-            validateBtn.addEventListener('click', () => realizarValidacion(dniInput.value.trim()));
-            dniInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') realizarValidacion(dniInput.value.trim()); });
+            if (!dni) return;
+            validatorLoader.style.display = 'block';
+            validationResultDiv.style.display = 'none';
+            validateBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getStudent&dni=${dni}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayStudentData(result.data);
+                } else {
+                    currentStudent = null;
+                    validationResultDiv.className = 'result-card not-found';
+                    validationResultDiv.innerHTML = `<h3>DNI no encontrado</h3><p>${result.message}</p>`;
+                }
+            } catch (error) {
+                currentStudent = null;
+                validationResultDiv.className = 'result-card not-found';
+                validationResultDiv.innerHTML = `<h3>Error de Conexión</h3><p>No se pudo conectar con la base de datos.</p>`;
+            } finally {
+                validatorLoader.style.display = 'none';
+                validationResultDiv.style.display = 'block';
+                validateBtn.disabled = false;
+                dniInput.value = '';
+            }
         }
         
-        // --- Pegar aquí el resto de las funciones de JavaScript (updateStatus, displayStudentData, realizarValidacion) ---
-        // Para que la respuesta sea más corta, no las repito, pero deben estar en tu código final.
-        // Copia las funciones del código que te di en la respuesta anterior.
-
-    </script>
-</body>
-</html>
+        //
