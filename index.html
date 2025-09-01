@@ -9,12 +9,8 @@
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; max-width: 550px; box-sizing: border-box; }
         .card h2 { text-align: center; margin-top: 0; }
         .container { display: none; flex-direction: column; align-items: center; gap: 30px; width: 100%; }
-        
-        /* Estilos para el formulario de login */
         #login-container { max-width: 400px; }
         #login-error { color: #dc3545; text-align: center; margin-top: 15px; font-weight: bold; }
-
-        /* Estilos del panel de admin */
         .loader { text-align: center; padding: 20px; display: none; }
         .result-card { display: none; border-top: 8px solid; text-align: center; padding-top: 20px; margin-top: 20px; }
         .result-card.success { border-top-color: #28a745; }
@@ -44,7 +40,6 @@
             <div id="login-error"></div>
         </form>
     </div>
-
     <div id="app-container" class="container">
         <div class="card">
             <h2>🔎 Gestor de Pagos</h2>
@@ -61,33 +56,38 @@
     </div>
 
     <script>
-        // =======================================================================
-        // URL de tu Aplicación Web de Google Apps Script
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwd8ma4RzPyUOfUvlYmFGiLxpqnrCJIYP1jg-NgsHYpu5bmvd1uQNFXFmyEqYil68efg/exec";
-        // =======================================================================
-
         let currentStudent = null;
 
-        // --- LÓGICA DE INICIO DE SESIÓN ---
         document.getElementById('login-form').addEventListener('submit', function(event) {
             event.preventDefault();
 
-            const USER = "Admin Colbert"; 
-            const PASS = "Mariana99.+";
+            // ▼▼▼ CREDENCIALES SIMPLIFICADAS PARA LA PRUEBA ▼▼▼
+            const USER = "a"; 
+            const PASS = "a";
+            // ▲▲▲ CREDENCIALES SIMPLIFICADAS PARA LA PRUEBA ▲▲▲
             
             const enteredUser = document.getElementById('user-input').value;
             const enteredPass = document.getElementById('pass-input').value;
             const loginError = document.getElementById('login-error');
 
             if (enteredUser === USER && enteredPass === PASS) {
-                // Si los datos son correctos, oculta el login y muestra el panel
                 document.getElementById('login-container').style.display = 'none';
                 document.getElementById('app-container').style.display = 'flex';
                 initializeApp();
             } else {
-                // Si son incorrectos, muestra un mensaje de error
                 loginError.textContent = 'Usuario o contraseña incorrectos.';
             }
         });
 
-        // ---
+        function initializeApp() { /* ... */ }
+        async function updateStatus(newState, newAmount) { /* ... */ }
+        function displayStudentData(student) { /* ... */ }
+        async function realizarValidacion(dni) { /* ... */ }
+
+        // --- Pegar aquí el resto de las funciones de JavaScript ---
+        // (initializeApp, updateStatus, displayStudentData, realizarValidacion)
+        // Por favor, copia las funciones completas de mi respuesta anterior para asegurarte de que estén todas.
+    </script>
+</body>
+</html>
