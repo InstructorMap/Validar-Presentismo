@@ -34,4 +34,140 @@
             <div class="form-group"><input type="text" id="user-input" placeholder="Usuario" required></div>
             <div class="form-group"><input type="password" id="pass-input" placeholder="Contraseña" required></div>
             <button type="submit">Ingresar</button>
-            <div id="login-error
+            <div id="login-error" style="color:red; text-align:center; margin-top:10px;"></div>
+        </form>
+    </div>
+
+    <div id="app-container" class="container">
+        <div class="card">
+            <h2>🔎 Gestor de Pagos</h2>
+            <div class="form-group"><input type="tel" id="dni-input" placeholder="Ingrese DNI del alumno" inputmode="numeric"></div>
+            <button id="validate-btn">Verificar Alumno</button>
+            <a href="https://docs.google.com/spreadsheets/d/1uf-Z_0r_plAPu9NHKGARtcqewsqaHLXJGkGMuG5bB9E/edit" target="_blank" style="text-decoration: none;">
+                <button type="button" class="secondary-btn">🗂️ Abrir Base de Datos</button>
+            </a>
+            <div class="loader" id="validator-loader">Buscando...</div>
+            <div id="validation-result" class="result-card"></div>
+        </div>
+    </div>
+
+    <script>
+        // =======================================================================
+        // URL ACTUALIZADA de tu Aplicación Web de Google Apps Script
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe6S0GXvdgY1egrWEhSbq5rbH1OwhRTJ7wju6NxzhtZs27UAMzePhVT2LnZ7KuzVQsAw/exec";
+        // =======================================================================
+
+        let currentStudent = null;
+
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const USER = "Admin Colbert"; 
+            const PASS = "Mariana99.+";
+            const enteredUser = document.getElementById('user-input').value;
+            const enteredPass = document.getElementById('pass-input').value;
+            if (enteredUser === USER && enteredPass === PASS) {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                initializeApp();
+            } else {
+                document.getElementById('login-error').textContent = 'Usuario o contraseña incorrectos.';
+            }
+        });
+
+        function initializeApp() {
+            const validateBtn = document.getElementById('validate-btn');
+            const dniInput = document.getElementById('dni-input');
+            validateBtn.addEventListener('click', () => realizarValidacion(dniInput.value.trim()));
+            dniInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') realizarValidacion(dniInput.value.trim()); });
+        }
+        
+        async function registrarPago() {
+            const paymentInput = document.getElementById('payment-amount');
+            const paymentAmount = parseFloat(paymentInput.value);
+            if (!currentStudent || isNaN(paymentAmount) || paymentAmount <= 0) {
+                alert("Por favor, ingrese un monto válido.");
+                return;
+            }
+            
+            document.getElementById('validator-loader').style.display = 'block';
+            document.getElementById('validation-result').style.display = 'none';
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'addPayment', row: currentStudent.row, paymentAmount: paymentAmount })
+                });
+                const result = await response.json();
+                if(result.success) {
+                    realizarValidacion(currentStudent.dni);
+                } else {
+                    alert('Error al registrar el pago: ' + result.message);
+                }
+            } catch(error) {
+                alert('Error de conexión al registrar el pago.');
+            } finally {
+                document.getElementById('validator-loader').style.display = 'none';
+            }
+        }
+
+        function displayStudentData(student) {
+            currentStudent = student;
+            const resultDiv = document.getElementById('validation-result');
+            let content = `<h3>${student.nombre}</h3><div class="financial-summary">`;
+            
+            const formatCurrency = (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(num);
+
+            content += `<p>Monto Total: <span>${formatCurrency(student.montoTotal)}</span></p>`;
+            content += `<p>Monto Abonado: <span>${formatCurrency(student.montoAbonado)}</span></p>`;
+            content += `<p style="font-size: 1.2em;"><strong>Saldo Pendiente:</strong> <span style="color: #dc3545;">${formatCurrency(student.saldoPendiente)}</span></p>`;
+            content += `</div>`;
+            
+            if (student.estado === 'Pagado') {
+                resultDiv.className = 'result-card success';
+            } else if (student.estado === 'Pago Parcial') {
+                resultDiv.className = 'result-card warning';
+            } else {
+                resultDiv.className = 'result-card danger';
+            }
+
+            if (student.estado !== 'Pagado') {
+                content += `<div class="add-payment-form">
+                                <h4>Registrar Nuevo Pago</h4>
+                                <div class="form-group">
+                                    <input type="number" id="payment-amount" placeholder="Ingresar monto del pago" step="0.01">
+                                </div>
+                                <button onclick="registrarPago()" class="success-btn">✔️ Registrar Pago</button>
+                            </div>`;
+            }
+
+            resultDiv.innerHTML = content;
+        }
+
+        async function realizarValidacion(dni) {
+            if (!dni) return;
+            document.getElementById('validator-loader').style.display = 'block';
+            document.getElementById('validation-result').style.display = 'none';
+            document.getElementById('validate-btn').disabled = true;
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getStudent&dni=${dni}`);
+                const result = await response.json();
+                if (result.success) {
+                    displayStudentData(result.data);
+                } else {
+                    document.getElementById('validation-result').className = 'result-card not-found';
+                    document.getElementById('validation-result').innerHTML = `<h3>DNI no encontrado</h3><p>${result.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('validation-result').className = 'result-card not-found';
+                document.getElementById('validation-result').innerHTML = `<h3>Error de Conexión</h3><p>No se pudo conectar con la base de datos.</p>`;
+            } finally {
+                document.getElementById('validator-loader').style.display = 'none';
+                document.getElementById('validation-result').style.display = 'block';
+                document.getElementById('validate-btn').disabled = false;
+                document.getElementById('dni-input').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
