@@ -43,33 +43,99 @@
 
         let currentStudent = null;
 
-        function updateStatus(newState, newAmount) {
-            // ... (código de la función sin cambios)
+        async function updateStatus(newState, newAmount) {
+            if (!currentStudent) return;
+            const validatorLoader = document.getElementById('validator-loader');
+            const validationResultDiv = document.getElementById('validation-result');
+            validatorLoader.style.display = 'block';
+            validationResultDiv.style.display = 'none';
+
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'updateStatus',
+                    row: currentStudent.row,
+                    newState: newState,
+                    newAmount: newAmount
+                })
+            });
+            const result = await response.json();
+            if(result.success) {
+                realizarValidacion(currentStudent.dni);
+            } else {
+                alert('Error al actualizar el estado.');
+                validatorLoader.style.display = 'none';
+            }
         }
         
         function displayStudentData(student) {
-            // ... (código de la función sin cambios)
+            currentStudent = student;
+            const validationResultDiv = document.getElementById('validation-result');
+            let content = `<h3>${student.nombre}</h3>`;
+            
+            if(student.estado === 'Abonó') {
+                validationResultDiv.className = 'result-card success';
+                content += `<p>Estado: <strong>Pagado</strong></p>`;
+            } else {
+                validationResultDiv.className = 'result-card warning';
+                content += `<p>Estado: <strong style="color: #dc3545;">Debe Abonar</strong></p>`;
+                content += `<div class="amount">Monto: ${student.monto}</div>`;
+                content += `<br><button class="success-btn" onclick="updateStatus('Abonó', 0)">✔️ Marcar como Pagado</button>`;
+            }
+            validationResultDiv.innerHTML = content;
         }
 
         async function realizarValidacion(dni) {
-            // ... (código de la función sin cambios)
+            const validatorLoader = document.getElementById('validator-loader');
+            const validationResultDiv = document.getElementById('validation-result');
+            const validateBtn = document.getElementById('validate-btn');
+            const dniInput = document.getElementById('dni-input');
+
+            if (!dni) return;
+            validatorLoader.style.display = 'block';
+            validationResultDiv.style.display = 'none';
+            validateBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getStudent&dni=${dni}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayStudentData(result.data);
+                } else {
+                    currentStudent = null;
+                    validationResultDiv.className = 'result-card not-found';
+                    validationResultDiv.innerHTML = `<h3>DNI no encontrado</h3><p>${result.message}</p>`;
+                }
+            } catch (error) {
+                currentStudent = null;
+                validationResultDiv.className = 'result-card not-found';
+                validationResultDiv.innerHTML = `<h3>Error de Conexión</h3><p>No se pudo conectar con la base de datos.</p>`;
+            } finally {
+                validatorLoader.style.display = 'none';
+                validationResultDiv.style.display = 'block';
+                validateBtn.disabled = false;
+                dniInput.value = '';
+            }
         }
         
         // --- INICIO DE LA APLICACIÓN Y CONTROL DE ACCESO ---
         window.onload = function() {
-            // ▼▼▼ CAMBIA "tu-clave-secreta" POR LA CONTRASEÑA QUE QUIERAS ▼▼▼
-            const password = "admin"; 
-            // ▲▲▲ CAMBIA "tu-clave-secreta" POR LA CONTRASEÑA QUE QUIERAS ▲▲▲
+            // ▼▼▼ DATOS DE ACCESO CONFIGURADOS ▼▼▼
+            const USER = "Admin Colbert"; 
+            const PASS = "Mariana99.+";
+            // ▲▲▲ DATOS DE ACCESO CONFIGURADOS ▲▲▲
 
-            const enteredPassword = prompt("🔑 Ingrese la contraseña de Administrador:");
+            const enteredUser = prompt("👤 Ingrese su usuario:");
+            const enteredPass = prompt("🔑 Ingrese su contraseña:");
 
-            if (enteredPassword === password) {
-                // Si la contraseña es correcta, muestra el panel y activa las funciones.
+            if (enteredUser === USER && enteredPass === PASS) {
+                // Si los datos son correctos, muestra el panel.
                 document.getElementById('app-container').style.display = 'flex';
                 initializeApp();
             } else {
-                // Si es incorrecta, muestra un mensaje de error.
-                document.body.innerHTML = '<div style="text-align:center; padding-top: 50px;"><h1>⛔ Acceso Denegado</h1><p>La contraseña es incorrecta.</p></div>';
+                // Si son incorrectos, muestra un mensaje de error.
+                document.body.innerHTML = '<div style="text-align:center; padding-top: 50px;"><h1>⛔ Acceso Denegado</h1><p>El usuario o la contraseña son incorrectos.</p></div>';
             }
         };
 
