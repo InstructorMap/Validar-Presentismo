@@ -5,89 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administrador</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; max-width: 550px; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
+        .container { display: none; flex-direction: column; align-items: center; gap: 30px; width: 100%; max-width: 550px; margin: auto; }
+        .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; box-sizing: border-box; }
         .card h2 { text-align: center; margin-top: 0; }
-        .container { display: none; flex-direction: column; align-items: center; gap: 30px; width: 100%; }
-        #login-container { max-width: 400px; }
-        #login-error { color: #dc3545; text-align: center; margin-top: 15px; font-weight: bold; }
+        #login-container { max-width: 400px; margin-top: 50px; }
         .loader { text-align: center; padding: 20px; display: none; }
-        .result-card { display: none; border-top: 8px solid; text-align: center; padding-top: 20px; margin-top: 20px; }
+        .result-card { display: none; border-top: 8px solid; text-align: left; padding: 20px; margin-top: 20px; }
+        .result-card h3 { margin-top: 0; text-align: center; }
         .result-card.success { border-top-color: #28a745; }
-        .result-card.warning { border-top-color: #dc3545; }
-        .result-card.not-found { border-top-color: #6c757d; }
-        .amount { font-size: 1.4em; font-weight: bold; color: #dc3545; margin-top: 15px; padding: 10px; border-radius: 8px; background-color: #fbebee; display: inline-block; }
+        .result-card.warning { border-top-color: #ffc107; }
+        .result-card.danger { border-top-color: #dc3545; }
+        .financial-summary p { margin: 8px 0; font-size: 1.1em; display: flex; justify-content: space-between; }
+        .financial-summary span { font-weight: bold; }
+        .add-payment-form { margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group input { width: 100%; padding: 12px; font-size: 1.1em; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
         button:disabled { background-color: #aaa; cursor: not-allowed; }
         button.success-btn { background-color: #28a745; }
         button.secondary-btn { background-color: #6c757d; }
-        button.secondary-btn:hover { background-color: #5a6268; }
     </style>
 </head>
 <body>
     <div id="login-container" class="card">
         <h2>Acceso de Administrador</h2>
         <form id="login-form">
-            <div class="form-group">
-                <input type="text" id="user-input" placeholder="Usuario" required>
-            </div>
-            <div class="form-group">
-                <input type="password" id="pass-input" placeholder="Contraseña" required>
-            </div>
+            <div class="form-group"><input type="text" id="user-input" placeholder="Usuario" required></div>
+            <div class="form-group"><input type="password" id="pass-input" placeholder="Contraseña" required></div>
             <button type="submit">Ingresar</button>
-            <div id="login-error"></div>
-        </form>
-    </div>
-    <div id="app-container" class="container">
-        <div class="card">
-            <h2>🔎 Gestor de Pagos</h2>
-            <div class="form-group">
-                <input type="tel" id="dni-input" placeholder="Ingrese DNI del alumno" inputmode="numeric">
-            </div>
-            <button id="validate-btn">Verificar Alumno</button>
-            <a href="https://docs.google.com/spreadsheets/d/1uf-Z_0r_plAPu9NHKGARtcqewsqaHLXJGkGMuG5bB9E/edit" target="_blank" style="text-decoration: none;">
-                <button type="button" class="secondary-btn">🗂️ Abrir Base de Datos (Google Sheet)</button>
-            </a>
-            <div class="loader" id="validator-loader">Buscando en la base de datos...</div>
-            <div id="validation-result" class="result-card"></div>
-        </div>
-    </div>
-
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwd8ma4RzPyUOfUvlYmFGiLxpqnrCJIYP1jg-NgsHYpu5bmvd1uQNFXFmyEqYil68efg/exec";
-        let currentStudent = null;
-
-        document.getElementById('login-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            // ▼▼▼ CREDENCIALES SIMPLIFICADAS PARA LA PRUEBA ▼▼▼
-            const USER = "a"; 
-            const PASS = "a";
-            // ▲▲▲ CREDENCIALES SIMPLIFICADAS PARA LA PRUEBA ▲▲▲
-            
-            const enteredUser = document.getElementById('user-input').value;
-            const enteredPass = document.getElementById('pass-input').value;
-            const loginError = document.getElementById('login-error');
-
-            if (enteredUser === USER && enteredPass === PASS) {
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
-                initializeApp();
-            } else {
-                loginError.textContent = 'Usuario o contraseña incorrectos.';
-            }
-        });
-
-        function initializeApp() { /* ... */ }
-        async function updateStatus(newState, newAmount) { /* ... */ }
-        function displayStudentData(student) { /* ... */ }
-        async function realizarValidacion(dni) { /* ... */ }
-
-        // --- Pegar aquí el resto de las funciones de JavaScript ---
-        // (initializeApp, updateStatus, displayStudentData, realizarValidacion)
-        // Por favor, copia las funciones completas de mi respuesta anterior para asegurarte de que estén todas.
-    </script>
-</body>
-</html>
+            <div id="login-error
